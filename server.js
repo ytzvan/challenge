@@ -37,7 +37,15 @@ router.get('/about',  (req, res) => {
   res.send('im the about page!');
 });
 
+router.get('/send-sms/:message', (req, res) => {
+  const message = req.param('message');
+  Controller.sendSMS(req, res, message);
+});
 
+router.get('/send-multisms/:message', (req, res) => {
+  const message = req.param('message');
+  Controller.sendMultiSMS(req, res, message);
+});
 router.get('/send-message/:message', (req, res) => {
   const message = req.param('message');
   Controller.sendFbMessage(req, res, message);

@@ -1,5 +1,4 @@
 const TO_NUMBER = "50768080024"
-const NEXMO_NUMBER = "50769516094";
 
 
 const Nexmo = require('nexmo');
@@ -7,37 +6,60 @@ const options = {
   debug: false,
 };
 
+const Numbers = [
+  {'number':50769516094},
+  { 'number': 50768080024 },
+]
+// const nexmo = new Nexmo(
+//   {
+//     'apiKey': "3ea30bb8",
+//     'apiSecret': "fzvpjQaLwn4qnNI6",
+//     'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
+//     'privateKey': __dirname + "/config/key.key"
+//   },
+//   options
+// );
 
 
-module.exports.sendMessage = (req, res, message) => { 
-  // Handle the controller logic
-  // send the message from the service
-  // await the result and return and status based on those. 
-
-  /*nexmo.channel.send(
-    { type: "sms", number: TO_NUMBER },
-    { type: "sms", number: "Ytzvan" },
+ function enviarSMS (msg, number) {
+  const Nexmo = require('nexmo');
+  const nexmo = new Nexmo(
     {
-      content: {
-        type: "text",
-        text: message
-      }
+      'apiKey': "3ea30bb8",
+      'apiSecret': "fzvpjQaLwn4qnNI6",
+      'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
+      'privateKey': __dirname + "/config/key.key"
     },
-    (err, data) => {
-      if (err) {
-        console.log(err);
-         return res.send(err);
+    options
+  );
+  nexmo.message.sendSms("Ytzvan", number, msg, (err, responseData) => {
+    if (err) {
+      console.log(err);
+      return {"status": false, "data": err};
+    } else {
+      if (responseData.messages[0]["status"] === "0") {
+        console.log("Message sent successfully.");
+        return {"status": true, "data": responseData.message};
       } else {
-      console.log(data);
-        return res.send(data);
+       
+        return { "status": false, "data": responseData.messages[0]["error-text"]}
       }
     }
-  );*/
-  
-const send = true;
+  });
+}
+module.exports.sendSMS = (req, res, msg, number) => { 
 
- if (send) {
-    nexmo.message.sendSms("Ytzvan", TO_NUMBER, message, (err, responseData) => {
+     const nexmo = new Nexmo(
+    {
+      'apiKey': "3ea30bb8",
+      'apiSecret': "fzvpjQaLwn4qnNI6",
+      'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
+      'privateKey': __dirname + "/config/key.key"
+    },
+    options
+  );
+
+    nexmo.message.sendSms("Ytzvan", number, msg, (err, responseData) => {
       if (err) {
         console.log(err);
       } else {
@@ -54,10 +76,7 @@ const send = true;
         }
       }
     });
-  } else {// borrar de aqui abajo
-    return res.send("ok no enviado"); // borrar luego;
-  } //
-}
+  }
 
 module.exports.sendFbMessage = (req, res, msg) =>  {
   const nexmo = new Nexmo(
@@ -79,15 +98,7 @@ module.exports.sendFbMessage = (req, res, msg) =>  {
   nexmo.channel.send(
     { type: "messenger", id: "2878540998927156" },
     { type: "messenger", id: "162137657310378" }, // fb page id: 162137657310378
-    {
-      content: {
-        type: "audio",
-        audio: {
-          url:
-            "https://file-examples.com/wp-content/uploads/2017/11/file_example_MP3_700KB.mp3"
-        }
-      }
-    },
+    message,
     (err, data) => {
       if (err) {
         console.log("err", err);
@@ -103,6 +114,17 @@ module.exports.sendFbMessage = (req, res, msg) =>  {
 
 
 }
+
+module.exports.sendMultiSMS = (req, res, message) => {
+  let arr = [];
+  let _self = this;
+  //console.log(enviarSMS());
+  Numbers.forEach( (obj) => {
+    enviarSMS(message, obj.number)
+    arr.push(obj.number);
+  } );
+  return res.send(arr);
+} 
 
 module.exports.inboundMessage = (req, res) => {
   console.log("inbound Message", req.body)
