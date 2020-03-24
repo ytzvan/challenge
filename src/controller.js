@@ -1,93 +1,69 @@
 const TO_NUMBER = "50768080024"
-
-
 const Nexmo = require('nexmo');
 const options = {
   debug: false,
 };
+const nexmo = new Nexmo(
+  {
+    'apiKey': "3ea30bb8",
+    'apiSecret': "fzvpjQaLwn4qnNI6",
+    'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
+    'privateKey': __dirname + "/config/key.key"
+  },
+  options
+);
 
 const Numbers = [
   {'number':50769516094},
   { 'number': 50768080024 },
 ]
-// const nexmo = new Nexmo(
-//   {
-//     'apiKey': "3ea30bb8",
-//     'apiSecret': "fzvpjQaLwn4qnNI6",
-//     'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
-//     'privateKey': __dirname + "/config/key.key"
-//   },
-//   options
-// );
 
 
- function enviarSMS (msg, number) {
-  const Nexmo = require('nexmo');
-  const nexmo = new Nexmo(
-    {
-      'apiKey': "3ea30bb8",
-      'apiSecret': "fzvpjQaLwn4qnNI6",
-      'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
-      'privateKey': __dirname + "/config/key.key"
-    },
-    options
-  );
+async function enviarSMS  (msg, number) { // Async Way
+  return new Promise( (resolve, reject) => {
+     nexmo.message.sendSms("Ytzvan", number, msg, (err, responseData) => {
+      if (err) {
+        console.log(err);
+        reject(err);
+      } else {
+        if (responseData.messages[0]["status"] === "0") {
+          console.log("Message sent successfully.");
+          resolve({"status": true, "data": responseData.message });
+        } else {
+          resolve( { "status": false, "data": responseData.messages[0]["error-text"] });
+        }
+      }
+    });
+
+  } );
+}
+
+function smsSend(msg, number) { // Sync way -> use for API pourposes or without React. 
   nexmo.message.sendSms("Ytzvan", number, msg, (err, responseData) => {
     if (err) {
       console.log(err);
-      return {"status": false, "data": err};
+      return { "status": false, "data": err }
     } else {
       if (responseData.messages[0]["status"] === "0") {
         console.log("Message sent successfully.");
-        return {"status": true, "data": responseData.message};
+        return { "status": true, "data": responseData.message };
       } else {
-       
-        return { "status": false, "data": responseData.messages[0]["error-text"]}
+        return { "status": false, "data": responseData.messages[0]["error-text"] };
       }
     }
   });
 }
+
 module.exports.sendSMS = (req, res, msg, number) => { 
-
-     const nexmo = new Nexmo(
-    {
-      'apiKey': "3ea30bb8",
-      'apiSecret': "fzvpjQaLwn4qnNI6",
-      'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
-      'privateKey': __dirname + "/config/key.key"
-    },
-    options
-  );
-
-    nexmo.message.sendSms("Ytzvan", number, msg, (err, responseData) => {
-      if (err) {
-        console.log(err);
-      } else {
-        if (responseData.messages[0]["status"] === "0") {
-          console.log("Message sent successfully.");
-          return res.status(200).json({ responseData: responseData });
-        } else {
-          console.log(
-            `Message failed with error: ${responseData.messages[0]["error-text"]}`
-          );
-          return res
-            .status(200)
-            .json({ error: responseData.messages[0]["error-text"] });
-        }
-      }
-    });
+   const result =  enviarSMS().then( (result) => {
+    return res.status(200).json(result);
+   }, (error) => {
+    return res.send("failed with errors", error);
+   } );
+  
   }
 
-module.exports.sendFbMessage = (req, res, msg) =>  {
-  const nexmo = new Nexmo(
-    {
-      apiKey: "3ea30bb8",
-      apiSecret: "fzvpjQaLwn4qnNI6",
-      applicationId: "5934f30e-521a-46e1-b2eb-aabf0ee66170",
-      privateKey: __dirname + "/config/key.key"
-    },
-    options
-  );
+module.exports.sendFbMessage = (req, res, msg) =>  { 
   const message = {
     content: {
       type: "text",
@@ -120,11 +96,12 @@ module.exports.sendMultiSMS = (req, res, message) => {
   let _self = this;
   //console.log(enviarSMS());
   Numbers.forEach( (obj) => {
-    enviarSMS(message, obj.number)
+    smsSend(message, obj.number);
     arr.push(obj.number);
-  } );
-  return res.send(arr);
-} 
+    console.log("sending SMS")
+   }); 
+   return res.status(200).send(arr); 
+  }
 
 module.exports.inboundMessage = (req, res) => {
   console.log("inbound Message", req.body)
@@ -139,15 +116,6 @@ module.exports.statusMessage = (req, res) => {
 
 
 module.exports.makeCall = (req, res) => {
-  const nexmo = new Nexmo(
-    {
-      apiKey: "3ea30bb8",
-      apiSecret: "fzvpjQaLwn4qnNI6",
-      applicationId: "5934f30e-521a-46e1-b2eb-aabf0ee66170",
-      privateKey: __dirname + "/config/key.key"
-    },
-    options
-  );
   nexmo.calls.create(
     {
       to: [
