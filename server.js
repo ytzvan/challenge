@@ -53,7 +53,8 @@ router.get('/send-message/:message', (req, res) => {
 
 router.post('/inbound-message', (req, res) => {
    console.log("inbound hook", req.body);
-   res.status(200).end();
+   
+   Controller.inboundMessage(req, res);
  // Controller.inboundMessage(req, res);
 })
 

@@ -17,7 +17,7 @@ const Numbers = [
   {'number':50769516094},
   { 'number': 50768080024 },
 ]
-
+let fbUsers = [];
 
 async function enviarSMS  (msg, number) { // Async Way
   return new Promise( (resolve, reject) => {
@@ -36,6 +36,24 @@ async function enviarSMS  (msg, number) { // Async Way
     });
 
   } );
+}
+
+
+function enviarMultiSMS(message) {
+  let arr = [];
+  let _self = this;
+  console.log("message", message);
+  Numbers.forEach((obj) => {
+    //smsSend(message, obj.number);
+    arr.push(obj.number);
+    console.log("enviando SMS..")
+  });
+  return console.log("Envío completado", arr);
+}
+
+function subscribeUser(user) {
+   fbUsers[0] = {'userid': user};
+   return console.log("subscribed");
 }
 
 function smsSend(msg, number) { // Sync way -> use for API pourposes or without React. 
@@ -104,9 +122,37 @@ module.exports.sendMultiSMS = (req, res, message) => {
   }
 
 module.exports.inboundMessage = (req, res) => {
-  console.log("inbound Message", req.body)
+  console.log("inbound Message", req.body.message_uuid)
   const body = req.body;
-  return res.send(body)
+  const trigger = /\bjoin me\b/i
+  const text = req.body.message.content.text;
+  // event type manager
+  if (req.body.message.content.text == "subscribe" || "Subscribe") { //Subscribe Event logic -> Move to Class based.
+    console.log("user subscribed"); // function for subscribe user
+    try {
+      subscribeUser(body.from.id);
+      console.log(fbUsers);
+    } catch (e) {
+      console.log("error");
+    } 
+  }
+
+
+  
+  console.log("testing message", trigger.test(text));
+  if (req.body.message.content.text == "join me" || "Join Me") { //Subscribe Event logic -> Move to Class based.
+    console.log("ready to send Multi-sms to friend List"); // function for send multisms user
+    try {
+      console.log("sending sms to the following numbers", Numbers);
+      enviarMultiSMS("este es el mensaje");
+ //     return res.status(200).end();
+    } catch (e) {
+      console.log("error");
+  //    return res.status(200).end();
+    }
+  }
+
+  return res.status(200).end();
 }
 
 module.exports.statusMessage = (req, res) => {
