@@ -5,6 +5,8 @@ const port = process.env.PORT || 3000;
 const bodyParser = require('body-parser'); // common.js
 const Controller = require ('./src/controller');
 require("dotenv").config();
+const path = require("path");
+
 
 // ROUTES
 // ==============================================
@@ -13,7 +15,7 @@ require("dotenv").config();
 
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
-
+app.use(express.static('public'));
 app.get('/sample', function (req, res) {
   res.send('this is a sample!');
 });
@@ -28,7 +30,7 @@ router.use( (req, res, next) => { // logging middleware
 // home page route (http://localhost:3000)
 router.get('/', (req, res) => {
   console.log("home");
-  res.send('im the home page!');
+  res.sendFile(path.join(__dirname + '/src/index.html'));
 });
 
 // about page route (http://localhost:8080/about)
@@ -52,8 +54,7 @@ router.get('/send-message/:message', (req, res) => {
 });
 
 router.post('/inbound-message', (req, res) => {
-   console.log("inbound hook", req.body);
-   
+   console.log("inbound hook");
    Controller.inboundMessage(req, res);
  // Controller.inboundMessage(req, res);
 })

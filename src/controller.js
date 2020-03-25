@@ -14,8 +14,8 @@ const nexmo = new Nexmo(
 );
 
 const Numbers = [
-  {'number':50769516094},
-  { 'number': 50768080024 },
+  {'number':50768080024}
+ // , { 'number': 50769516094 }
 ]
 let fbUsers = [];
 
@@ -44,7 +44,7 @@ function enviarMultiSMS(message) {
   let _self = this;
   console.log("message", message);
   Numbers.forEach((obj) => {
-    //smsSend(message, obj.number);
+   // smsSend(message, obj.number); // function responsible for send the SMS
     arr.push(obj.number);
     console.log("enviando SMS..")
   });
@@ -122,29 +122,35 @@ module.exports.sendMultiSMS = (req, res, message) => {
   }
 
 module.exports.inboundMessage = (req, res) => {
-  console.log("inbound Message", req.body.message_uuid)
+  console.log("inbound Message", req.body.message)
+  const message = req.body.message;
   const body = req.body;
-  const trigger = /\bjoin me\b/i
+  const trigger = /\bjoin me\b/i; 
+  const subscribeAction = /\bsubscribe\b/i; 
   const text = req.body.message.content.text;
+  const phrase = { message: "\n Please respond in the following link: ", link: "http://triptable.com/" };    // since we don't have a Nexmo number, users can't respond directly. We use link instead.
+            
+  console.log("🤖message: ", text);
   // event type manager
-  if (req.body.message.content.text == "subscribe" || "Subscribe") { //Subscribe Event logic -> Move to Class based.
-    console.log("user subscribed"); // function for subscribe user
+  if (subscribeAction.test(text)) {
+    console.log("ready to sibscribe");
     try {
       subscribeUser(body.from.id);
-      console.log(fbUsers);
+      console.log("user subscribed completed: ", fbUsers);
     } catch (e) {
-      console.log("error");
+      console.log("error", e);
     } 
   }
 
-
   
-  console.log("testing message", trigger.test(text));
-  if (req.body.message.content.text == "join me" || "Join Me") { //Subscribe Event logic -> Move to Class based.
+
+  if (trigger.test(req.body.message.content.text)) { //Subscribe Event logic -> Move to Class based.
     console.log("ready to send Multi-sms to friend List"); // function for send multisms user
+    const finalMessage = text + " " + phrase.message + phrase.link;
+    console.log("finalMessage: ", finalMessage);
     try {
       console.log("sending sms to the following numbers", Numbers);
-      enviarMultiSMS("este es el mensaje");
+      enviarMultiSMS(finalMessage);
  //     return res.status(200).end();
     } catch (e) {
       console.log("error");
