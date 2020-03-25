@@ -5,9 +5,9 @@ const options = {
 };
 const nexmo = new Nexmo(
   {
-    'apiKey': "3ea30bb8",
-    'apiSecret': "fzvpjQaLwn4qnNI6",
-    'applicationId': "5934f30e-521a-46e1-b2eb-aabf0ee66170",
+    'apiKey': 'e61e678a',
+    'apiSecret': 'sZse0wEP5Let8BXR',
+    'applicationId': '32a9e8c8-de8b-487c-9237-1051a942a83c',
     'privateKey': __dirname + "/config/key.key"
   },
   options
@@ -44,7 +44,7 @@ function enviarMultiSMS(message) {
   let _self = this;
   console.log("message", message);
   Numbers.forEach((obj) => {
-   // smsSend(message, obj.number); // function responsible for send the SMS
+    smsSend(message, obj.number); // function responsible for send the SMS
     arr.push(obj.number);
     console.log("enviando SMS..")
   });
