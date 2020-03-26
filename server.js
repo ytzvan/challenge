@@ -39,9 +39,10 @@ router.get('/about',  (req, res) => {
   res.send('im the about page!');
 });
 
-router.get('/send-sms/:message', (req, res) => {
+router.get('/send-sms', (req, res) => {
   const message = req.param('message');
-  Controller.sendSMS(req, res, message);
+  const number = req.param('number');
+  Controller.sendSMS(req, res, message, number);
 });
 
 router.get('/send-multisms/:message', (req, res) => {
@@ -66,7 +67,7 @@ router.post('/status-message', (req, res)=> {
 
 router.post("/event-call", (req, res) => {
   console.log("event-call", req.body);
-  res.status(200).end();
+  Controller.eventCall(req, res);
 });
 
 router.post("/answer-call", (req, res) => {
@@ -81,7 +82,18 @@ router.post("/error-call", (req, res) => {
 
 router.get("/make-call", (req, res) => {
   Controller.makeCall(req, res);
-})
+});
+
+router.post("/delivery-sms", (req, res) => {
+  console.log("delivery-sms", req.body);
+  res.status(200).end();
+});
+
+router.post("/inbound-sms", (req, res) => {
+  console.log("inbound-sms", req.body);
+  Controller.inboundSms(req, res);
+  
+});
 // apply the routes to our application
 app.use('/', router);
 
