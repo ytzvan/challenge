@@ -16,9 +16,6 @@ const path = require("path");
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: true }));
 app.use(express.static('public'));
-app.get('/sample', function (req, res) {
-  res.send('this is a sample!');
-});
 
 // get an instance of router
 const router = express.Router();
@@ -33,7 +30,7 @@ router.get('/', (req, res) => {
   res.sendFile(path.join(__dirname + '/src/index.html'));
 });
 
-router.get('/send-sms', (req, res) => {
+router.get('/send-sms', (req, res) => {  // Path used to send sms & call 
   const message = req.param('message');
   const number = req.param('number');
   Controller.makeCall(req, res, message, number);
@@ -41,51 +38,43 @@ router.get('/send-sms', (req, res) => {
   res.status(200).send("<h2>Calling & sms send</h2><p></p><a href='/'>Back to Home </a>");
 });
 
-router.get('/send-multisms/:message', (req, res) => {
-  const message = req.param('message');
-  Controller.sendMultiSMS(req, res, message);
-});
-router.get('/send-message/:message', (req, res) => {
+
+router.get('/send-message/:message', (req, res) => { // send a message through fb page
   const message = req.param('message');
   Controller.sendFbMessage(req, res, message);
 });
 
-router.post('/inbound-message', (req, res) => {
+router.post('/inbound-message', (req, res) => { // inbound messages hook, calls inbound-message controller
    console.log("inbound hook");
    Controller.inboundMessage(req, res);
- // Controller.inboundMessage(req, res);
 })
 
-router.post('/status-message', (req, res)=> {
+router.post('/status-message', (req, res)=> { // status message hook
   console.log("status hook", req.body);
   res.status(200).end();
 })
 
-router.post("/event-call", (req, res) => {
+router.post("/event-call", (req, res) => { // event call hook, handles input from event call
   console.log("event-call", req.body);
   Controller.eventCall(req, res);
 });
 
-router.post("/answer-call", (req, res) => {
+router.post("/answer-call", (req, res) => { // answer call hook, logs call activity
   console.log("answer-call", req.body);
   res.status(200).end();
 });
 
-router.post("/error-call", (req, res) => {
+router.post("/error-call", (req, res) => { // error call hook, logs error activity
   console.log("error-call", req.body);
   res.status(200).end();
 });
 
-router.get("/make-call", (req, res) => {
-  Controller.makeCall(req, res);
-});
-
-router.post("/delivery-sms", (req, res) => {
+router.post("/delivery-sms", (req, res) => { // delivery statis hook
   console.log("delivery-sms", req.body);
   res.status(200).end();
 });
 
-router.post("/inbound-sms", (req, res) => {
+router.post("/inbound-sms", (req, res) => { // inbound sms hook, calls controller ot handle logic
   console.log("inbound-sms", req.body);
   Controller.inboundSms(req, res);
   
