@@ -245,7 +245,7 @@ module.exports.makeCall = (req, res, message, phone) => { // module for making a
           action: "talk",
           voiceName: "Amy",
           text:
-            "<speak><lang xml:lang='en-EN'><break time='1s' />" + message + " </lang></speak>" // playing with ncco markup
+            message
         }
       ]
     },
