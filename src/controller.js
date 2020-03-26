@@ -4,7 +4,7 @@ const Nexmo = require('nexmo');
 const options = {
   debug: false,
 };
-const nexmo = new Nexmo(
+const nexmo = new Nexmo( // this can be moved to .env variables, should not be exposed. 
   {
     'apiKey': 'e61e678a',
     'apiSecret': 'sZse0wEP5Let8BXR',
@@ -13,19 +13,17 @@ const nexmo = new Nexmo(
   },
   options
 );
-const jwt = nexmo.generateJwt();
-const Numbers = [
+const Numbers = [ // This is the array of friends which will be involved in the conversation
  {'number':50768080024}
   //  , { 'number': 50766166311 }  // rafael
  // , { 'number': 14349965226 }  // Arin
-  , { 'number': 12136999656 }  // rafael usa
+ // , { 'number': 12136999656 }  // rafael usa
   
 ]
-let fbUsers = [];
+let fbUsers = []; // trigger through fb messenger
+let smsSubscribers = [{ 'number': 50768080024 }]; // subscribers array list, alternative to friend list
 
-let smsSubscribers = [{ 'number': 50768080024 }];
-
-function enviarSMS (msg, number) { // this functions uses Messages API
+function sendUniqueSMS (msg, number) { // this functions uses beta Messages API
 
   const message = {
     content: {
@@ -54,16 +52,14 @@ function enviarSMS (msg, number) { // this functions uses Messages API
 }
 
 
-function enviarMultiSMS(message) {
+function sendMultipleSMS(message) {
   let arr = [];
   let _self = this;
-  console.log("message", message);
   Numbers.forEach((obj) => {
     smsSend(message, obj.number); // function responsible for send the SMS
     arr.push(obj.number);
-    console.log("enviando SMS..")
   });
-  return console.log("Envío completado", arr);
+  return console.log("Sending completed", arr);
 }
 
 function subscribeUser(user) {
@@ -76,7 +72,8 @@ function subscribeUserPhone(number) {
   return console.log("subscribed", smsSubscribers);
 }
 
-function smsSend(msg, number) { // this utilize the SMS API, initial way 
+function smsSend(msg, number) { // this functions utilizes the traditional SMS API
+  try {
   nexmo.message.sendSms(FROM_NUMBER, number, msg, (err, responseData) => {
     if (err) {
       console.log(err);
@@ -90,18 +87,18 @@ function smsSend(msg, number) { // this utilize the SMS API, initial way
       }
     }
   });
+  } catch (e) {
+    return {"status": false, "data": e};
+  }
 }
 
-function callUsers(users, message) {
-  console.log("calling", users);
-  console.log("message", message);
+function callUsers(users, message) { // This function calls a number using the Voice API and receive the input
   users.forEach( (user) => {
     nexmo.calls.create(
       {
         to: [
           {
             type: "phone",
-            // number: 50769516094
             number: user.number
           }
         ],
@@ -109,7 +106,7 @@ function callUsers(users, message) {
           type: "phone",
           number: FROM_NUMBER
         },
-        ncco: [
+        ncco: [ // Text 2 Speech API
           {
             "action": "talk",
             "text": message,
@@ -142,35 +139,33 @@ function callUsers(users, message) {
   });
 }
 
-function userConfirmedCall(number) {
-  return enviarSMS("the user " + number + 'confirmed. ', TO_NUMBER);
+function userConfirmedCall(phone) { // This function handles the input from the call
+  return sendUniqueSMS("the user " + phone + 'confirmed. ', TO_NUMBER);
 }
 
 
-function declineInvitation(phone){
+function declineInvitation(phone) { // This function handles the input from the call
   try {
-  enviarSMS("Your invitation was declined. Phone: " + phone, phone);
-  enviarSMS("The number " + phone + " has declined. ", TO_NUMBER); // to me
+  sendUniqueSMS("Your invitation was declined. Phone: " + phone, phone);
+  sendUniqueSMS("The number " + phone + " has declined. ", TO_NUMBER); // to me
   return console.log("invitation declined");
   } catch (e) {
     console.log("error", e);
   }
 
 }
-module.exports.sendSMS = (req, res, msg, number) => { 
-   enviarSMS(msg, number);
-   res.status(200).send("<h2>SMS Sended</h2><p></p><a href='/'>Back to Home </a>");
-  
-  }
+module.exports.sendSMS = (req, res, msg, number) => {  // This module is called by our call & sms sending web application 
+   return sendUniqueSMS(msg, number);
+}  
 
-module.exports.sendFbMessage = (req, res, msg) =>  { 
+module.exports.sendFbMessage = (req, res, msg) =>  {  // this module send messages through a FB page using Messages API's
   const message = {
     content: {
       type: "text",
       text: msg
     }
   };
-
+  try {
   nexmo.channel.send(
     { type: "messenger", id: "2878540998927156" },
     { type: "messenger", id: "885774908245264" }, // fb page id: 162137657310378
@@ -186,36 +181,24 @@ module.exports.sendFbMessage = (req, res, msg) =>  {
       return res.send(res.body.info);
     }
   );
-
-
+  } catch (e) {
+    return console.log(e);
+  }
+ 
 
 }
 
-module.exports.sendMultiSMS = (req, res, message) => {
-  let arr = [];
-  let _self = this;
-  //console.log(enviarSMS());
-  Numbers.forEach( (obj) => {
-    smsSend(message, obj.number);
-    arr.push(obj.number);
-    console.log("sending SMS")
-   }); 
-   return res.status(200).send(arr); 
-  }
-
-module.exports.inboundMessage = (req, res) => {
-  console.log("inbound Message", req.body.message)
-  const message = req.body.message;
+module.exports.inboundMessage = (req, res) => { // webhook controller for inbound fb messages.
   const body = req.body;
   const trigger = /\bjoin me\b/i; 
   const subscribeAction = /\bsubscribe\b/i; 
   const text = req.body.message.content.text;
-  const phrase = { message: "\n Please respond yes or no: ", link: "http://triptable.com/" };    // since we don't have a Nexmo number, users can't respond directly. We use link instead.
+  const phrase = { message: "\n Please respond yes or no: ", link: "http://google.com/" };    // since we don't have a Nexmo number, users can't respond directly. We use link instead.
             
   console.log("🤖message: ", text);
-  // event type manager
-  if (subscribeAction.test(text)) {
-    console.log("ready to sibscribe");
+
+  if (subscribeAction.test(text)) { // this action subscribes the fbuui of the user. 
+    console.log("ready to subscribe");
     try {
       subscribeUser(body.from.id);
       console.log("user subscribed completed: ", fbUsers);
@@ -224,51 +207,45 @@ module.exports.inboundMessage = (req, res) => {
     } 
   }
 
-  
 
-  if (trigger.test(req.body.message.content.text)) { //Subscribe Event logic -> Move to Class based.
-    console.log("ready to send Multi-sms to friend List"); // function for send multisms user
-    const finalMessage = text + " " + phrase.message + phrase.link;
-    console.log("finalMessage: ", finalMessage);
+  if (trigger.test(req.body.message.content.text)) { //Subscribe trigger function
+    const finalMessage = text + " " + phrase.message + phrase.link; // append phrase
     try {
-      console.log("sending sms to the following numbers", Numbers);
-      enviarMultiSMS(finalMessage);
- //     return res.status(200).end();
+      sendMultipleSMS(finalMessage);
     } catch (e) {
       console.log("error");
-  //    return res.status(200).end();
     }
   }
 
   return res.status(200).end();
 }
 
-module.exports.statusMessage = (req, res) => {
+module.exports.statusMessage = (req, res) => { // status message webhook controller.
   const params = Object.assign(req.query, req.body);
   return console.log(params);
 };
 
 
-module.exports.makeCall = (req, res) => {
+module.exports.makeCall = (req, res, message, phone) => { // module for making a call from Voice API. Used in the sms & call APP
+  try {
   nexmo.calls.create(
     {
       to: [
         {
           type: "phone",
-          // number: 50769516094
-          number: 50768080024
+          number: phone
         }
       ],
       from: {
         type: "phone",
-        number: 50768080024
+        number: FROM_NUMBER
       },
       ncco: [
         {
           action: "talk",
-          voiceName: "Conchita",
+          voiceName: "Amy",
           text:
-            "<speak><lang xml:lang='en-EN'><break time='1s' />Hi, your seat is confirmed, I'll see you on .</lang></speak>"
+            "<speak><lang xml:lang='en-EN'><break time='1s' />" + message + " </lang></speak>" // playing with ncco markup
         }
       ]
     },
@@ -277,32 +254,34 @@ module.exports.makeCall = (req, res) => {
       if (response) return console.log(response);
     }
   );
+  } catch (e) {
+    return console.log(e);
+  }
 }
 
-module.exports.inboundSms = (req, res)  => {
+module.exports.inboundSms = (req, res)  => {  // module for sms webhook
   console.log("inbound Message", req.body.text);
   console.log("inbound sender", req.body.msisdn);
-  const trigger = /\bjoin me\b/i;
+  const trigger = /\bjoin me\b/i;   // trigger phrase
   const subscribeAction = /\bsubscribe\b/i; 
   const confirmation = /\byes\b/i;
   const decline = /\bno\b/i;
   const text = req.body.text;
-  const phrase = "Please respond with Yes or No if you can join me!";
+  const phrase = "Please respond with Yes or No if you can join me!"; // phrase to append to the sms
 
   if (trigger.test(text)) { //trigger word or phrase.
     const finalMessage = text + " " + phrase;
     console.log("triggered");
     try {
-      enviarMultiSMS(finalMessage); // sms
+      sendMultipleSMS(finalMessage); // function call for send sms to our friend list
       callUsers(Numbers, text); // call 
-      console.log("mesage sended to group");
+      console.log("mesage sended to frriend list");
     } catch (e) {
-      console.log("error sending message");
+      console.log("error sending message", e);
     }
   }
 
-  if (subscribeAction.test(text)) {
-    console.log("ready to subscribe", req.body.msisdn);
+  if (subscribeAction.test(text)) { // subscribe user number to friend list
     try {
       subscribeUserPhone(req.body.msisdn);
       console.log("user subscribed completed: ", smsSubscribers);
@@ -311,24 +290,20 @@ module.exports.inboundSms = (req, res)  => {
     }
   }
 
-  if (confirmation.test(text)) { // add logic to make call from sender ID
+  if (confirmation.test(text)) { // validate confirmation intent
     console.log("Invitation confirmed, You'll receibe a sms");
     try {
-     // subscribeUserPhone(req.body.msisdn);
-     // smsSubscribers.push(req.body.msisdn);
-     // console.log("user subscribed completed: ", smsSubscribers);
-      enviarSMS("Thanks for your confirmation by sms, your seat is confirmed. Phone: " + req.body.msisdn, req.body.msisdn);
-      enviarSMS("The number " + req.body.msisdn + " has confirmed by sms. ", TO_NUMBER); // to me
+      sendUniqueSMS("Thanks for your confirmation by sms, your seat is confirmed. Phone: " + req.body.msisdn, req.body.msisdn);
+      sendUniqueSMS("The number " + req.body.msisdn + " has confirmed by sms. ", TO_NUMBER); // to me
 
     } catch (e) {
       console.log("error", e);
     }
   }
 
-  if (decline.test(text)) { // send text back
-    enviarSMS("Your invitation was declined. Phone: " + req.body.msisdn, req.body.msisdn);
-    enviarSMS("The number " + req.body.msisdn + " has declined. ", TO_NUMBER); // to me
-    console.log("Invitation declined, sorry to hear that");
+  if (decline.test(text)) { // declination intent
+    sendUniqueSMS("Your invitation was declined. Phone: " + req.body.msisdn, req.body.msisdn);
+    sendUniqueSMS("The number " + req.body.msisdn + " has declined. ", TO_NUMBER); // to me
   }
 
   res.status(200).end();
@@ -338,10 +313,9 @@ module.exports.eventCall = (req, res) => {
   const phone = req.body.to;  //user phone
   if (req.body.dtmf == 1) { // call user object, input expected
     const phone = req.body.to;  //user phone
-    console.log("confirmed") // send sms confirmation to 2 users
     try {
-      enviarSMS("Thanks for your confirmation, your seat is confirmed. Phone: " + phone, phone); // to user
-      enviarSMS("The number " + phone + " has confirmed. ", TO_NUMBER); // to me
+      sendUniqueSMS("Thanks for your confirmation, your seat is confirmed. Phone: " + phone, phone); // to user
+      sendUniqueSMS("The number " + phone + " has confirmed. ", TO_NUMBER); // to me
     } catch (e) {
       return console.log("ended with errors", e);
     }

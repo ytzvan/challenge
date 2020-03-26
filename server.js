@@ -27,22 +27,18 @@ router.use( (req, res, next) => { // logging middleware
   console.log(req.method, req.url);
   next();
 });
-// home page route (http://localhost:3000)
+
 router.get('/', (req, res) => {
   console.log("home");
   res.sendFile(path.join(__dirname + '/src/index.html'));
 });
 
-// about page route (http://localhost:8080/about)
-router.get('/about',  (req, res) => {
-  console.log("about");
-  res.send('im the about page!');
-});
-
 router.get('/send-sms', (req, res) => {
   const message = req.param('message');
   const number = req.param('number');
+  Controller.makeCall(req, res, message, number);
   Controller.sendSMS(req, res, message, number);
+  res.status(200).send("<h2>Calling & sms send</h2><p></p><a href='/'>Back to Home </a>");
 });
 
 router.get('/send-multisms/:message', (req, res) => {
