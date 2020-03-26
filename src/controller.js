@@ -16,7 +16,10 @@ const nexmo = new Nexmo(
 const jwt = nexmo.generateJwt();
 const Numbers = [
  {'number':50768080024}
- // , { 'number': 50765587529 }
+  //  , { 'number': 50766166311 }  // rafael
+ // , { 'number': 14349965226 }  // Arin
+  , { 'number': 12136999656 }  // rafael usa
+  
 ]
 let fbUsers = [];
 
@@ -143,9 +146,20 @@ function userConfirmedCall(number) {
   return enviarSMS("the user " + number + 'confirmed. ', TO_NUMBER);
 }
 
+
+function declineInvitation(phone){
+  try {
+  enviarSMS("Your invitation was declined. Phone: " + phone, phone);
+  enviarSMS("The number " + phone + " has declined. ", TO_NUMBER); // to me
+  return console.log("invitation declined");
+  } catch (e) {
+    console.log("error", e);
+  }
+
+}
 module.exports.sendSMS = (req, res, msg, number) => { 
    enviarSMS(msg, number);
-   res.status(200).send("<h2>SMS Sended</h2><br><a href='/'>Back to Home </a>");
+   res.status(200).send("<h2>SMS Sended</h2><p></p><a href='/'>Back to Home </a>");
   
   }
 
@@ -312,6 +326,8 @@ module.exports.inboundSms = (req, res)  => {
   }
 
   if (decline.test(text)) { // send text back
+    enviarSMS("Your invitation was declined. Phone: " + req.body.msisdn, req.body.msisdn);
+    enviarSMS("The number " + req.body.msisdn + " has declined. ", TO_NUMBER); // to me
     console.log("Invitation declined, sorry to hear that");
   }
 
@@ -319,6 +335,7 @@ module.exports.inboundSms = (req, res)  => {
 }
 
 module.exports.eventCall = (req, res) => {
+  const phone = req.body.to;  //user phone
   if (req.body.dtmf == 1) { // call user object, input expected
     const phone = req.body.to;  //user phone
     console.log("confirmed") // send sms confirmation to 2 users
@@ -330,7 +347,8 @@ module.exports.eventCall = (req, res) => {
     }
   }
   if (req.body.dtmf == 2) {
-    console.log("declined") // send sms confirmation to 1 user
+    console.log("sending decline sms") // send sms confirmation to 1 user
+    declineInvitation(phone);
   }
   return res.status(200).end();
 }
